@@ -17,27 +17,8 @@ namespace Interface
         //     UnlockLocker = connection.SendHackingLocker;
         }
 
-        /// <summary>
-        /// Событие попадание в коридор(открыт лифт)
-        /// </summary>
         public void PlayHint(int number) {
             API.NetworkService.PlayHint((HintEnum)number);
         }
-        /// </summary>
-        // public void PlayHintTwo() {
-        //     API.NetworkService.PlayHint(HintEnum.two);
-        // }
-        // /// </summary>
-        // public void PlayHintTwo() {
-        //     API.NetworkService.PlayHint(HintEnum.two);
-        // }
-        // /// </summary>
-        // public void PlayHintTwo() {
-        //     API.NetworkService.PlayHint(HintEnum.two);
-        // }
-        // /// </summary>
-        // public void PlayHintTwo() {
-        //     API.NetworkService.PlayHint(HintEnum.two);
-        // }
     }
 }
