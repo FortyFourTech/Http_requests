@@ -7,7 +7,7 @@ using System;
 
 namespace API {
     public static class NetworkService {
-        private delegate void NetRequestCallback(string result);
+        private delegate void NetRequestCallback(string result, string error = null);
 
         public static string BASE_URL = "http://192.168.1.32/";
 
@@ -61,6 +61,8 @@ namespace API {
                 Debug.Log(webRequest.error);
                 Debug.Log(webRequest.url);
                 Debug.Log("received headers: ");
+                if (callback != null)
+                    callback(null, webRequest.error);
             } else {
                 // Show results as text
                 var result = webRequest.downloadHandler.text;
@@ -139,17 +141,17 @@ namespace API {
             if (cb != null) cb(success, error);
         }
 
-        public delegate void ApiRequestCallback<T>(T result);
+        public delegate void ApiRequestCallback<T>(T result, string error);
         public static IEnumerator GetCurrentHint(ApiRequestCallback<CurrentHintResponse> resultHandler = null) {
             return MakeRequest(
                 Request.getCurrent,
                 headers: new Dictionary<string, string> {
                     { kHeaderNameCookie, kCookieNameSession + "=" + sessionCookie },
                 },
-                callback: response => {
+                callback: (response, error) => {
                     if (resultHandler != null) {
                         var resultObject = JsonUtility.FromJson<CurrentHintResponse>(response);
-                        resultHandler(resultObject);
+                        resultHandler(resultObject, error);
                     }
                 }
             );
@@ -164,10 +166,10 @@ namespace API {
                 new Dictionary<string, string> {
                     { kHeaderNameCookie, kCookieNameSession + "=" + sessionCookie },
                 },
-                callback: response => {
+                callback: (response, error) => {
                     if (resultHandler != null) {
                         var resultObject = JsonUtility.FromJson<PlayHintResponse>(response);
-                        resultHandler(resultObject);
+                        resultHandler(resultObject, error);
                     }
                 }
             );
