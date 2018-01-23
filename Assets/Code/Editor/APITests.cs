@@ -15,27 +15,51 @@ namespace Testing {
                 Assert.IsTrue(result, error);
             });
 
-            Action<IEnumerator> goThroughCoroutine = null;
-            goThroughCoroutine = input => {
-                while (input.MoveNext()) {
-                    //yield return null;
-                    if (input.Current is AsyncOperation)
-                        while (!(input.Current as AsyncOperation).isDone) { }
-                    //yield return null;
-                    else if (input.Current is IEnumerator)
-                        goThroughCoroutine(input.Current as IEnumerator);
-                }
-            };
-            goThroughCoroutine(enumerator);
+            _GoThroughCoroutine(enumerator);
         }
 
-        // A UnityTest behaves like a coroutine in PlayMode
-        // and allows you to yield null to skip a frame in EditMode
-        //[UnityTest]
-        //public IEnumerator EnumTestsWithEnumeratorPasses() {
-        //	// Use the Assert class to test conditions.
-        //	// yield to skip a frame
-        //	yield return null;
-        //}
+        [Test]
+        public void TestPlayHintCall() {
+            NetworkService.ApiRequestCallback<PlayHintResponse> responseChecker = (result, error) => {
+                Assert.IsNull(error, error);
+            };
+
+            var hintValues = Enum.GetValues(typeof(HintEnum)) as HintEnum[];
+            foreach (var hint in hintValues) {
+                var request = NetworkService.PlayHint(hint, responseChecker);
+                _GoThroughCoroutine(request);
+            }
+        }
+
+        [Test]
+        public void TestCurrentHintCall() {
+            string expectedHintName = null;
+            NetworkService.ApiRequestCallback<CurrentHintResponse> responseChecker = (result, error) => {
+                Assert.IsNull(error, error);
+
+                var expectedName = expectedHintName == null ? "none" : expectedHintName ;
+                Assert.AreEqual(result.hintName, expectedName, "unexpected hint name");
+            };
+
+            var request = NetworkService.GetCurrentHint(responseChecker);
+            _GoThroughCoroutine(request);
+
+            var hintValues = Enum.GetValues(typeof(HintEnum)) as HintEnum[];
+            foreach (var hint in hintValues) {
+                expectedHintName = HintExtension.requestParameterValue(hint);
+                request = NetworkService.GetCurrentHint(responseChecker);
+                _GoThroughCoroutine(request);
+            }
+        }
+
+        private void _GoThroughCoroutine(IEnumerator enumerator) {
+            while (enumerator.MoveNext()) {
+                if (enumerator.Current is AsyncOperation)
+                    while (!(enumerator.Current as AsyncOperation).isDone) { }
+
+                else if (enumerator.Current is IEnumerator)
+                    _GoThroughCoroutine(enumerator.Current as IEnumerator);
+            }
+        }
     }
 }
