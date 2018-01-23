@@ -60,15 +60,13 @@ namespace API {
             if (webRequest.isNetworkError) {
                 Debug.Log(webRequest.error);
                 Debug.Log(webRequest.url);
-                Debug.Log("received headers: ");
+
                 if (callback != null)
                     callback(null, webRequest.error);
             } else {
                 // Show results as text
                 var result = webRequest.downloadHandler.text;
                 Debug.Log(result);
-
-                //var resultObject = JsonUtility.FromJson<>(result);
 
                 if (callback != null)
                     callback(result);
