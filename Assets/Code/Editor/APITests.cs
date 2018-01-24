@@ -41,14 +41,17 @@ namespace Testing {
                 Assert.AreEqual(result.hintName, expectedName, "unexpected hint name");
             };
 
-            var request = NetworkService.GetCurrentHint(responseChecker);
-            _GoThroughCoroutine(request);
+            var requestCurrent = NetworkService.GetCurrentHint(responseChecker);
+            _GoThroughCoroutine(requestCurrent);
 
             var hintValues = Enum.GetValues(typeof(HintEnum)) as HintEnum[];
             foreach (var hint in hintValues) {
+                var playRequest = NetworkService.PlayHint(hint);
+                _GoThroughCoroutine(playRequest);
+
                 expectedHintName = HintExtension.requestParameterValue(hint);
-                request = NetworkService.GetCurrentHint(responseChecker);
-                _GoThroughCoroutine(request);
+                requestCurrent = NetworkService.GetCurrentHint(responseChecker);
+                _GoThroughCoroutine(requestCurrent);
             }
         }
 
