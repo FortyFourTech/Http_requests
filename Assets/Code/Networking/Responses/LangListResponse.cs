@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace API {
-    public class PlayHintResponse {
-        public float length;
+    public class LangListResponse {
+        public Dictionary<string,string> langs;
     }
 }

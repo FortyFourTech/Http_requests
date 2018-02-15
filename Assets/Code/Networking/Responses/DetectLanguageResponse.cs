@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace API {
-    public class CurrentHintResponse {
-        public string hintName;
+    public class DetectLanguageResponse {
+        public string lang;
     }
 }
