@@ -18,11 +18,6 @@ namespace Testing {
             TestExtensionMethods(typeof(Request));
         }
 
-        [Test]
-        public void TestHintsEnum() {
-            TestExtensionMethods(typeof(HintEnum));
-        }
-
         static void TestExtensionMethods(Type enumeration) {
             var values = Enum.GetValues(enumeration);
             var methods = GetExtensionMethods(enumeration);
