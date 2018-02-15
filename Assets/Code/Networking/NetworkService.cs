@@ -4,23 +4,17 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System.Linq;
 using System;
+using fastJSON;
 
 namespace API {
     public static class NetworkService {
         private delegate void NetRequestCallback(string result, string error = null);
 
-        public static string BASE_URL = "http://192.168.1.32/";
-
-        private static string kHeaderNameCookieSet = "Set-Cookie";
-        private static string kHeaderNameCookie = "Cookie";
-        private static string kHeaderNameLocation = "Location";
-        private static string kCookieNameSession = "session";
-
-        private static string sessionCookie;
+        public static string BASE_URL = "https://translate.yandex.net/api/v1.5/tr.json";
 
         private static IEnumerator MakeRequest(
             Request request,
-            Dictionary<string, string> parameters = null,
+            Dictionary<RequestParameter, string> parameters = null,
             Dictionary<string, string> headers = null,
             NetRequestCallback callback = null) {
 
@@ -28,26 +22,48 @@ namespace API {
                                                //    method = request.method()
                                                //};
 
-            if (parameters != null) {
-                if (request.method() == UnityWebRequest.kHttpVerbPOST) {
-                    var form = new WWWForm();
-                    foreach (var param in parameters)
-                        form.AddField(param.Key, param.Value);
-
-                    webRequest = UnityWebRequest.Post(request.url(), form);
-                } else if (request.method() == UnityWebRequest.kHttpVerbGET) {
-                    var paramString = "?";
-                    foreach (var param in parameters)
-                        paramString += param.Key + "=" + param.Value + "&";
-
-                    // remove last '&'
-                    if (parameters.Count >= 2)
-                        paramString = paramString.Remove(paramString.Length - 2);
-
-                    webRequest = UnityWebRequest.Get(request.url() + paramString);
+            var getRequiredParams = request.getParameters();
+            var getParameters = new Dictionary<RequestParameter, string>();
+            foreach (var param in getRequiredParams) {
+                if (parameters != null && parameters.ContainsKey(param)) {
+                    getParameters[param] = parameters[param];
+                } else {
+                    getParameters[param] = param.defaultValue();
                 }
+            }
+            var paramString = "";
+
+            if (getParameters.Count > 0) {
+                paramString = "?";
+                foreach (var param in getParameters)
+                    paramString += param.Key.ToString() + "=" + param.Value + "&";
+
+                // remove last '&'
+                // if (getParameters.Count >= 2)
+                    paramString = paramString.Remove(paramString.Length - 1);
+            }
+
+            var postRequiredParams = request.postParameters();
+            var postParameters = new Dictionary<RequestParameter, string>();
+            foreach (var param in postRequiredParams) {
+                if (parameters != null && parameters.ContainsKey(param)) {
+                    postParameters[param] = parameters[param];
+                } else {
+                    postParameters[param] = param.defaultValue();
+                }
+            }
+
+            var requestUrl = request.url() + paramString;
+            Debug.Log("requestString: " + requestUrl);
+
+            if (postParameters.Count > 0) {
+                var form = new WWWForm();
+                foreach (var param in postParameters)
+                    form.AddField(param.Key.ToString(), param.Value);
+
+                webRequest = UnityWebRequest.Post(requestUrl, form);
             } else {
-                webRequest = UnityWebRequest.Get(request.url());
+                webRequest = UnityWebRequest.Get(requestUrl);
             }
 
             if (headers != null) {
@@ -76,97 +92,43 @@ namespace API {
             }
         }
 
-        public delegate void AuthorizationCallback(bool success, string error = null);
-        // very special case
-        public static IEnumerator DoAuthorization(AuthorizationCallback cb = null) {
-            var loginParams = new Dictionary<string, string> {
-                {"user", "device" },
-                {"pass", "qwerty" },
-            };
-
-            var loginForm = new WWWForm();
-            foreach (var param in loginParams)
-                loginForm.AddField(param.Key, param.Value);
-
-            var webRequest = UnityWebRequest.Post(Request.authorize.url(), loginForm);
-
-            webRequest.redirectLimit = 0;
-
-            yield return webRequest.Send();
-
-            bool success = false;
-            string error = null;
-            // here must be error because of the redirect limit
-            // this is desired path
-            if (webRequest.isNetworkError) {
-                var responseHeaders = webRequest.GetResponseHeaders();
-
-                var successCondition = responseHeaders.Any(x => x.Key == kHeaderNameLocation && x.Value.StartsWith("/index.htm")) &&
-                    responseHeaders.Any(x => x.Key == kHeaderNameCookieSet);
-
-                var failCondition = responseHeaders.Any(x => x.Key == kHeaderNameLocation && x.Value.StartsWith("/auth.htm"));
-
-                if (successCondition) {
-                    var cookiesString = responseHeaders.First(x => x.Key == kHeaderNameCookieSet).Value;
-                    var cookiesArray = cookiesString.Split(new string[] { "; " }, StringSplitOptions.RemoveEmptyEntries);
-                    var cookiesDict = cookiesArray.ToDictionary(
-                        item => item.Split('=')[0],
-                        item => item.Split('=')[1]
-                    );
-
-                    var sessionId = cookiesDict[kCookieNameSession];
-                    sessionCookie = sessionId;
-
-                   success = true;
-                } else if (failCondition) {
-                    // unauthorized
-                    error = "authorization failed";
-                } else {
-                    // unknown error
-                    error = "unknown authorization error";
-                }
-            } else {
-                // unknown error
-                error = "unknown authorization error";
-
-                // Show results as text
-                var result = webRequest.downloadHandler.text;
-                Debug.Log(result);
-
-                //var resultObject = JsonUtility.FromJson<>(result);
-            }
-
-            if (cb != null) cb(success, error);
-        }
-
         public delegate void ApiRequestCallback<T>(T result, string error);
-        public static IEnumerator GetCurrentHint(ApiRequestCallback<CurrentHintResponse> resultHandler = null) {
+        public static IEnumerator GetLangsList(ApiRequestCallback<LangListResponse> resultHandler = null) {
             return MakeRequest(
-                Request.getCurrent,
-                headers: new Dictionary<string, string> {
-                    { kHeaderNameCookie, kCookieNameSession + "=" + sessionCookie },
-                },
+                Request.languageList,
                 callback: (response, error) => {
                     if (resultHandler != null) {
-                        var resultObject = JsonUtility.FromJson<CurrentHintResponse>(response);
+                        var resultObject = JSON.ToObject<LangListResponse>(response);
                         resultHandler(resultObject, error);
                     }
                 }
             );
         }
         
-        public static IEnumerator PlayHint(HintEnum hint, ApiRequestCallback<PlayHintResponse> resultHandler = null) {
+        public static IEnumerator DetectLanguage(string text, ApiRequestCallback<DetectLanguageResponse> resultHandler = null) {
             return MakeRequest(
-                Request.playSound,
-                new Dictionary<string, string> {
-                    { "hint", hint.requestParameterValue() },
-                },
-                new Dictionary<string, string> {
-                    { kHeaderNameCookie, kCookieNameSession + "=" + sessionCookie },
+                Request.detectLanguage,
+                new Dictionary<RequestParameter, string> {
+                    { RequestParameter.text, text },
                 },
                 callback: (response, error) => {
                     if (resultHandler != null) {
-                        var resultObject = JsonUtility.FromJson<PlayHintResponse>(response);
+                        var resultObject = JSON.ToObject<DetectLanguageResponse>(response);
+                        resultHandler(resultObject, error);
+                    }
+                }
+            );
+        }
+
+        public static IEnumerator Translate(string text, ApiRequestCallback<TranslationResponse> resultHandler = null) {
+            return MakeRequest(
+                Request.translate,
+                new Dictionary<RequestParameter, string> {
+                    { RequestParameter.text, text },
+                },
+                callback: (response, error) => {
+                    if (resultHandler != null) {
+                        var resultObject = JSON.ToObject<TranslationResponse>(response);
                         resultHandler(resultObject, error);
                     }
                 }
