@@ -35,17 +35,5 @@ namespace API {
 
             return result;
         }
-        public static bool isRequired(this RequestParameter param) {
-            bool result = false;
-            switch (param) {
-                case RequestParameter.text:
-                    result = true;
-                    break;
-                default:
-                    throw new Exception("defaultValue for request parameter '" + param.ToString() + "' is not defined");
-            }
-
-            return result;
-        }
     }
 }
