@@ -5,6 +5,7 @@ using UnityEngine.Networking;
 using System.Linq;
 using System;
 using fastJSON;
+using API.Responses;
 
 namespace API {
     public static class NetworkService {
