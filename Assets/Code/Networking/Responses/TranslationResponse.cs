@@ -1,5 +1,5 @@
 namespace API {
-    public class TranslationResponse {
+    public struct TranslationResponse {
         public string[] text;
     }
 }

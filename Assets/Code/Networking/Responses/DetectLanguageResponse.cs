@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace API {
-    public class DetectLanguageResponse {
+    public struct DetectLanguageResponse {
         public string lang;
     }
 }
