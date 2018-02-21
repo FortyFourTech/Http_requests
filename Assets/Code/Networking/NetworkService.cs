@@ -9,15 +9,15 @@ using API.Responses;
 
 namespace API {
     public static class NetworkService {
-        private delegate void NetRequestCallback(string result, string error = null);
+        public delegate void ApiRequestCallback<T>(T result, string error = null);
 
         public static string BASE_URL = "https://translate.yandex.net/api/v1.5/tr.json";
 
-        private static IEnumerator MakeRequest(
+        private static IEnumerator MakeRequest<ResponseType>(
             Request request,
             Dictionary<RequestParameter, string> parameters = null,
             Dictionary<string, string> headers = null,
-            NetRequestCallback callback = null) {
+            ApiRequestCallback<ResponseType> callback = null) {
 
             UnityWebRequest webRequest = null; // = new UnityWebRequest(request.url()) {
                                                //    method = request.method()
@@ -79,30 +79,30 @@ namespace API {
                 Debug.Log(webRequest.url);
 
                 if (callback != null)
-                    callback(null, webRequest.error);
+                    callback(default(ResponseType), webRequest.error);
             } else {
                 // Show results as text
                 var result = webRequest.downloadHandler.text;
                 Debug.Log(result);
 
-                if (callback != null)
-                    callback(result);
+                var resultObject = new Responses.ResponseBase<ResponseType>(result);
+
+                if (callback != null) {
+                    if (resultObject.Error != null)
+                        callback(resultObject.Result, resultObject.Error);
+                    else
+                        callback(resultObject.Result);
+                }
 
                 // Or retrieve results as binary data
                 //byte[] results = www.downloadHandler.data;
             }
         }
 
-        public delegate void ApiRequestCallback<T>(T result, string error);
         public static IEnumerator GetLangsList(ApiRequestCallback<LangListResponse> resultHandler = null) {
             return MakeRequest(
                 Request.languageList,
-                callback: (response, error) => {
-                    if (resultHandler != null) {
-                        var resultObject = JSON.ToObject<LangListResponse>(response);
-                        resultHandler(resultObject, error);
-                    }
-                }
+                callback: resultHandler
             );
         }
         
@@ -112,12 +112,7 @@ namespace API {
                 new Dictionary<RequestParameter, string> {
                     { RequestParameter.text, text },
                 },
-                callback: (response, error) => {
-                    if (resultHandler != null) {
-                        var resultObject = JSON.ToObject<DetectLanguageResponse>(response);
-                        resultHandler(resultObject, error);
-                    }
-                }
+                callback: resultHandler
             );
         }
 
@@ -127,12 +122,7 @@ namespace API {
                 new Dictionary<RequestParameter, string> {
                     { RequestParameter.text, text },
                 },
-                callback: (response, error) => {
-                    if (resultHandler != null) {
-                        var resultObject = JSON.ToObject<TranslationResponse>(response);
-                        resultHandler(resultObject, error);
-                    }
-                }
+                callback: resultHandler
             );
         }
     }
