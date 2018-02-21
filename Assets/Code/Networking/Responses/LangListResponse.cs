@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace API {
     public class LangListResponse {
+        public string[] dirs;
         public Dictionary<string,string> langs;
     }
 }

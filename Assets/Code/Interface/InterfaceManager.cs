@@ -7,6 +7,7 @@ namespace Interface {
     public class InterfaceManager : MonoBehaviour {
         public void LanguageList() {
             var request = API.NetworkService.GetLangsList((result, error) => {
+                Debug.Log(result.dirs.ToString());
                 Debug.Log(result.langs.ToString());
             });
 
