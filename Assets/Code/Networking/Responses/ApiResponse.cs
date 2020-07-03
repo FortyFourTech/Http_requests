@@ -3,31 +3,39 @@ using System.Collections.Generic;
 using fastJSON;
 using UnityEngine;
 
-namespace API.Responses {
-    public class ResponseBase<T> {
+namespace API.Responses
+{
+    public class ApiResponse<T>
+    {
         private int _code;
         private string _message;
         private T _result;
-        public ResponseBase(string response) {
-            var dict = JSON.Parse(response) as Dictionary<string,object>;
+        public ApiResponse(string response)
+        {
+            var dict = JSON.Parse(response) as Dictionary<string, object>;
             var hasError = false;
             object codeObj;
-            if (dict.TryGetValue("code", out codeObj)) {
+            if (dict.TryGetValue("code", out codeObj))
+            {
                 int code = Convert.ToInt32(codeObj);
-                string errorCode = Enum.GetName(typeof(ErrorCodes), code);
+                string errorCode = Enum.GetName(typeof(EErrorCodes), code);
                 bool hasErrorCode = errorCode != null;
 
-                if (hasErrorCode) {
+                if (hasErrorCode)
+                {
                     hasError = true;
                     _code = code;
                     _message = (string)dict["message"];
                 }
             }
 
-            if (hasError) {
+            if (hasError)
+            {
                 Debug.Log("request returned error:");
                 Debug.Log(_message);
-            } else {
+            }
+            else
+            {
                 _result = JSON.ToObject<T>(response);
             }
         }
@@ -37,7 +45,11 @@ namespace API.Responses {
         public T Result { get { return _result; } }
     }
 
-    enum ErrorCodes {
+    /// <summary>
+    /// List of response codes that should be treated as errors.
+    /// </summary>
+    enum EErrorCodes
+    {
         _401 = 401,
         _402 = 402,
         _404 = 404,

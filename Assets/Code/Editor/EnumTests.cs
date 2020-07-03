@@ -10,26 +10,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-namespace Testing {
-    public partial class EnumTests {
+namespace Testing
+{
+    public partial class EnumTests
+    {
 
-        [Test]
-        public void TestRequestEnum() {
-            TestExtensionMethods(typeof(Request));
-        }
+        // [Test]
+        // public void TestRequestEnum()
+        // {
+        //     TestExtensionMethods(typeof(ERequest));
+        // }
 
-        static void TestExtensionMethods(Type enumeration) {
+        static void TestExtensionMethods(Type enumeration)
+        {
             var values = Enum.GetValues(enumeration);
             var methods = GetExtensionMethods(enumeration);
 
-            foreach (var val in values) {
-                foreach (var method in methods) {
+            foreach (var val in values)
+            {
+                foreach (var method in methods)
+                {
                     method.Invoke(null, new object[] { val });
                 }
             }
         }
 
-        static IEnumerable<MethodInfo> GetExtensionMethods(Type extendedType) {
+        static IEnumerable<MethodInfo> GetExtensionMethods(Type extendedType)
+        {
             var assembly = extendedType.Assembly;
             var query = from type in assembly.GetTypes()
                         where type.IsSealed && !type.IsGenericType && !type.IsNested

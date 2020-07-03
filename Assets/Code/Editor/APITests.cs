@@ -6,57 +6,57 @@ using System;
 using System.Collections;
 using API;
 
-namespace Testing {
-    public class APITests {
-
+namespace Testing
+{
+    public class APITests
+    {
         [Test]
-        public void TestAuthorization() {
-            var enumerator = NetworkService.DoAuthorization((result, error) => {
-                Assert.IsTrue(result, error);
+        public void TestLangList()
+        {
+            var enumerator = ApiService.GetLangsListRequest((result, error) =>
+            {
+                Assert.IsNull(error, error);
             });
 
             _GoThroughCoroutine(enumerator);
         }
 
         [Test]
-        public void TestPlayHintCall() {
-            NetworkService.ApiRequestCallback<PlayHintResponse> responseChecker = (result, error) => {
+        public void TestDetection()
+        {
+            var enumerator = ApiService.DetectLanguageRequest("hello", (result, error) =>
+            {
                 Assert.IsNull(error, error);
-            };
+                Assert.AreEqual("en", result.lang, "wrong lang");
+            });
 
-            var hintValues = Enum.GetValues(typeof(HintEnum)) as HintEnum[];
-            foreach (var hint in hintValues) {
-                var request = NetworkService.PlayHint(hint, responseChecker);
-                _GoThroughCoroutine(request);
-            }
+            _GoThroughCoroutine(enumerator);
+
+            enumerator = ApiService.DetectLanguageRequest("привет", (result, error) =>
+            {
+                Assert.IsNull(error, error);
+                Assert.AreEqual("ru", result.lang, "wrong lang");
+            });
+
+            _GoThroughCoroutine(enumerator);
         }
 
         [Test]
-        public void TestCurrentHintCall() {
-            string expectedHintName = null;
-            NetworkService.ApiRequestCallback<CurrentHintResponse> responseChecker = (result, error) => {
+        public void TestTranslate()
+        {
+            var enumerator = ApiService.TranslateRequest("привет", (result, error) =>
+            {
                 Assert.IsNull(error, error);
+                Assert.AreEqual("hi", result.text[0], "wrong translation");
+            });
 
-                var expectedName = expectedHintName == null ? "none" : expectedHintName ;
-                Assert.AreEqual(result.hintName, expectedName, "unexpected hint name");
-            };
-
-            var requestCurrent = NetworkService.GetCurrentHint(responseChecker);
-            _GoThroughCoroutine(requestCurrent);
-
-            var hintValues = Enum.GetValues(typeof(HintEnum)) as HintEnum[];
-            foreach (var hint in hintValues) {
-                var playRequest = NetworkService.PlayHint(hint);
-                _GoThroughCoroutine(playRequest);
-
-                expectedHintName = HintExtension.requestParameterValue(hint);
-                requestCurrent = NetworkService.GetCurrentHint(responseChecker);
-                _GoThroughCoroutine(requestCurrent);
-            }
+            _GoThroughCoroutine(enumerator);
         }
 
-        private void _GoThroughCoroutine(IEnumerator enumerator) {
-            while (enumerator.MoveNext()) {
+        private void _GoThroughCoroutine(IEnumerator enumerator)
+        {
+            while (enumerator.MoveNext())
+            {
                 if (enumerator.Current is AsyncOperation)
                     while (!(enumerator.Current as AsyncOperation).isDone) { }
 
